@@ -25,7 +25,7 @@ let db: any;
 
 function initDatabase() {
     if (!fs.existsSync(DB_PATH)) {
-        console.log('--- Initializing Database ---');
+        console.log(`--- Initializing Database at ${DB_PATH} ---`);
         db = new Database(DB_PATH);
         
         // Use the contents of setup-database.js to create schema
@@ -506,8 +506,10 @@ async function startServer() {
     app.get('/api/games', (req, res) => {
         try {
             const data = getAllFromTable('games');
+            console.log(`[API] GET /api/games - Returned ${data?.length || 0} games`);
             res.json(data || []);
-        } catch (e) {
+        } catch (e: any) {
+            console.error('[API] GET /api/games error:', e.message);
             res.status(500).json([]);
         }
     });

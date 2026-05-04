@@ -74,24 +74,33 @@ const AppContent: React.FC = () => {
     };
 
     const fetchPublicData = useCallback(async () => {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 5000);
         try {
-            console.log(`[DEBUG] Fetching games from origin: ${window.location.origin}`);
             setGameFetchError(null);
-            const gamesResponse = await fetch(`/api/games?t=${Date.now()}`);
-            console.log("Games response status:", gamesResponse.status);
+            console.log(`[DEBUG] Requesting: /api/games?t=${Date.now()}`);
+            const gamesResponse = await fetch(`/api/games?t=${Date.now()}`, { signal: controller.signal });
+            clearTimeout(timeoutId);
+            console.log(`[DEBUG] Status: ${gamesResponse.status} ${gamesResponse.statusText}`);
             if (gamesResponse.ok) {
                 const data = await gamesResponse.json();
-                console.log("Games data received:", data.length, "items");
+                console.log(`[DEBUG] SUCCESS: Received ${data.length} games. First game name: ${data[0]?.name}`);
                 setGames(data);
             } else {
                 const text = await gamesResponse.text();
                 const err = `Failed to fetch games. Status: ${gamesResponse.status}`;
-                console.error(err, "Body:", text.slice(0, 100));
+                console.error(`[DEBUG] ERROR: ${err}. Body preview: ${text.slice(0, 200)}`);
                 setGameFetchError(err);
             }
         } catch (e: any) {
-            console.error("Games fetch exception:", e);
-            setGameFetchError(`Fetch error: ${e.message || 'Unknown error'}`);
+            clearTimeout(timeoutId);
+            if (e.name === 'AbortError') {
+                console.error("[DEBUG] Games fetch timed out");
+                setGameFetchError("Fetch timed out (5s)");
+            } else {
+                console.error("Games fetch exception:", e);
+                setGameFetchError(`Fetch error: ${e.message || 'Unknown error'}`);
+            }
         }
     }, []);
 
@@ -122,6 +131,19 @@ const AppContent: React.FC = () => {
             setHasInitialFetched(true);
         }
     }, [loading, verifyData]);
+
+    useEffect(() => {
+        const checkHealth = async () => {
+            try {
+                const res = await fetch('/api/health');
+                const data = await res.json();
+                console.log("[DEBUG] API Health Check:", data);
+            } catch (e) {
+                console.error("[DEBUG] API Health Check Failed:", e);
+            }
+        };
+        checkHealth();
+    }, []);
 
     useEffect(() => {
         fetchPublicData();
