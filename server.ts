@@ -924,7 +924,10 @@ async function startServer() {
 
     app.post('/api/user/ai-lucky-pick', authMiddleware, async (req, res) => {
         const key = process.env.GEMINI_API_KEY;
-        if (!key) return res.status(503).json({ message: "AI disabled" });
+        if (!key) {
+            console.error('--- [AI] Gemini API Key missing. Service unavailable. ---');
+            return res.status(503).json({ message: "AI disabled" });
+        }
         try {
             const ai = new GoogleGenAI(key);
             const { gameType, count = 5 } = req.body;
@@ -945,7 +948,7 @@ async function startServer() {
     } else {
         const distPath = path.join(process.cwd(), 'dist');
         app.use(express.static(distPath));
-        app.get('*all', (req, res) => {
+        app.get('*splat', (req, res) => {
             res.sendFile(path.join(distPath, 'index.html'));
         });
     }

@@ -192,6 +192,29 @@ No. These are two different services:
 - **Hostinger**: This is your VPS provider (the hosting server). 
 You need **both**: Hostinger to provide the server, and the Gemini Key for the AI functionality.
 
-### How do I fix the "PathError" (Missing parameter name)?
-If you see this error in your logs, update your `server.ts` to use `app.get('*all', ...)` for the catch-all route instead of `*`. I have already applied this fix to the project.
+### PathError (Missing parameter name)
+This error occurs because you are using **Express 5**. In Express 5, wildcard routes MUST be named.
+- **Fixed syntax:** `app.get('*splat', ...)`
+
+**I have applied this fix to `server.ts`.** If you still see the error:
+1. **Pull the latest changes:** `git pull`
+2. **Re-build the frontend:** `npm run build`
+3. **CRITICAL: Clean up PM2.** You likely have duplicate or old processes running.
+   ```bash
+   # Kill everything to be safe
+   pm2 stop all
+   pm2 delete all
+   
+   # Restart fresh with the correct name
+   npm install
+   pm2 start "npx tsx server.ts" --name ababa-exchange
+   ```
+4. **Check logs again:** `pm2 logs ababa-exchange`
+
+### 503 Server Error / AI Disabled
+If you see a `503` error when using AI features (like Lucky Pick), it means the **Gemini API Key** is missing from your environment.
+- Add `GEMINI_API_KEY=your_key_here` to your `.env` file.
+
+### Architecture Note: Unified App vs `backend/` Folder
+The **active** backend is the `server.ts` file in the root directory. It handles both API routes and serving the React frontend. The `backend/` folder is legacy and can be ignored.
 
