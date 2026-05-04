@@ -144,6 +144,7 @@ function initDatabase() {
         }
     } else {
         db = new Database(DB_PATH);
+        console.log('--- Database Opened [Path: ' + DB_PATH + '] ---');
     }
     db.pragma('journal_mode = WAL');
     db.pragma('foreign_keys = ON');
@@ -431,6 +432,11 @@ async function startServer() {
     const app = express();
     const port = process.env.PORT || 3000;
 
+    app.use((req, res, next) => {
+        console.log(`[SERVER] ${req.method} ${req.url}`);
+        next();
+    });
+
     app.use(cors());
     app.use(express.json());
 
@@ -482,8 +488,12 @@ async function startServer() {
 
     // --- DATA ROUTES ---
     app.get('/api/games', (req, res) => {
-        console.log(`[API] GET /api/games requested`);
+        console.log(`[API] GET /api/games requested - DB Status: ${!!db}`);
         try {
+            if (!db) {
+                console.warn('[API] DB is null during /api/games request! Re-initializing...');
+                initDatabase();
+            }
             const data = getAllFromTable('games');
             console.log(`[API] Returning ${data?.length || 0} games`);
             res.json(data || []);
@@ -964,7 +974,7 @@ async function startServer() {
     } else {
         const distPath = path.join(process.cwd(), 'dist');
         app.use(express.static(distPath));
-        app.get('*path', (req, res) => {
+        app.get('/:path*', (req, res) => {
             res.sendFile(path.join(distPath, 'index.html'));
         });
     }

@@ -56,6 +56,7 @@ const AppContent: React.FC = () => {
     const [users, setUsers] = useState<User[]>([]);
     const [dealers, setDealers] = useState<Dealer[]>([]);
     const [games, setGames] = useState<Game[]>([]);
+    const [gameFetchError, setGameFetchError] = useState<string | null>(null);
     const [bets, setBets] = useState<Bet[]>([]);
     const [hasInitialFetched, setHasInitialFetched] = useState(false);
     
@@ -75,7 +76,8 @@ const AppContent: React.FC = () => {
     const fetchPublicData = useCallback(async () => {
         try {
             console.log("Fetching games...");
-            const gamesResponse = await fetch('/api/games');
+            setGameFetchError(null);
+            const gamesResponse = await fetch(`/api/games?t=${Date.now()}`);
             console.log("Games response status:", gamesResponse.status);
             if (gamesResponse.ok) {
                 const data = await gamesResponse.json();
@@ -83,10 +85,13 @@ const AppContent: React.FC = () => {
                 setGames(data);
             } else {
                 const text = await gamesResponse.text();
-                console.error("Failed to fetch games. Status:", gamesResponse.status, "Body:", text.slice(0, 100));
+                const err = `Failed to fetch games. Status: ${gamesResponse.status}`;
+                console.error(err, "Body:", text.slice(0, 100));
+                setGameFetchError(err);
             }
-        } catch (e) {
+        } catch (e: any) {
             console.error("Games fetch exception:", e);
+            setGameFetchError(`Fetch error: ${e.message || 'Unknown error'}`);
         }
     }, []);
 
@@ -185,7 +190,7 @@ const AppContent: React.FC = () => {
     return (
         <div className="min-h-screen flex flex-col">
             {!role || !account ? (
-                <LandingPage games={games} />
+                <LandingPage games={games} error={gameFetchError} />
             ) : (
                 <>
                     <Header />
@@ -293,5 +298,5 @@ const AppContent: React.FC = () => {
     );
 };
 
-function App() { return (<div className="App bg-transparent text-slate-200 h-full"><AppContent /></div>); }
+function App() { return (<div className="App bg-transparent text-slate-200 h-full"><AuthProvider><AppContent /></AuthProvider></div>); }
 export default App;

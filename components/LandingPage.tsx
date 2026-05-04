@@ -309,7 +309,7 @@ const AdminResetInfoModal: React.FC<{ isOpen: boolean; onClose: () => void; }> =
 };
 
 
-const LandingPage: React.FC<{ games: Game[] }> = ({ games }) => {
+const LandingPage: React.FC<{ games: Game[]; error?: string | null }> = ({ games, error }) => {
     const [isAdminModalOpen, setIsAdminModalOpen] = useState(false);
     const [isResetModalOpen, setIsResetModalOpen] = useState(false);
     const [isAdminResetModalOpen, setIsAdminResetModalOpen] = useState(false);
@@ -329,17 +329,27 @@ const LandingPage: React.FC<{ games: Game[] }> = ({ games }) => {
                 <section id="games" className="mb-20">
                     <h2 className="text-3xl font-bold text-center mb-10 text-white uppercase tracking-widest">Today's Games</h2>
                     
-                    {games.length === 0 ? (
+                    {error && (
+                        <div className="bg-red-500/10 border border-red-500/30 p-4 rounded-md text-red-300 text-center mb-8">
+                            <p className="font-bold">Error connecting to market server:</p>
+                            <p className="text-sm opacity-80">{error}</p>
+                            <button onClick={() => window.location.reload()} className="mt-2 text-xs underline hover:text-white">Retry Connection</button>
+                        </div>
+                    )}
+
+                    {games.length === 0 && !error ? (
                         <div className="flex flex-col items-center justify-center p-12 bg-slate-800/30 rounded-2xl border border-slate-700/50">
                             <div className="w-12 h-12 border-4 border-cyan-500/20 border-t-cyan-500 rounded-full animate-spin mb-4"></div>
                             <p className="text-cyan-400 font-bold tracking-widest uppercase animate-pulse">Synchronizing Market Data...</p>
                         </div>
-                    ) : (
+                    ) : games.length > 0 ? (
                         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-8">
                             {games.map(game => (
                                 <GameDisplayCard key={game.id} game={game} onClick={handleGameClick} />
                             ))}
                         </div>
+                    ) : !error && (
+                        <p className="text-center text-slate-500 italic">No games currently scheduled.</p>
                     )}
                 </section>
 
