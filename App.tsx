@@ -75,7 +75,7 @@ const AppContent: React.FC = () => {
 
     const fetchPublicData = useCallback(async () => {
         try {
-            console.log("Fetching games...");
+            console.log(`[DEBUG] Fetching games from origin: ${window.location.origin}`);
             setGameFetchError(null);
             const gamesResponse = await fetch(`/api/games?t=${Date.now()}`);
             console.log("Games response status:", gamesResponse.status);

@@ -150,16 +150,29 @@ function initDatabase() {
     db.pragma('foreign_keys = ON');
 }
 
+// --- DATABASE ACCESS HELPER ---
+function getDb() {
+    if (!db) {
+        console.warn('[SERVER] Database was closed or not initialized. Re-initializing...');
+        initDatabase();
+    }
+    return db;
+}
+
 // --- HELPERS (From original backend) ---
 
 function isGameOpen(drawTime: string) {
     try {
-        if (!drawTime || typeof drawTime !== 'string') return false;
+        if (!drawTime || typeof drawTime !== 'string' || !drawTime.includes(':')) return false;
         
         const now = new Date();
         // PKT is UTC+5. Calculate current time in PKT.
         const pktTime = new Date(now.getTime() + (5 * 60 * 60 * 1000));
-        const [drawH, drawM] = drawTime.split(':').map(Number);
+        const parts = drawTime.split(':');
+        const drawH = parseInt(parts[0], 10);
+        const drawM = parseInt(parts[1], 10);
+        
+        if (isNaN(drawH) || isNaN(drawM)) return false;
         
         // Logical Draw Date Strategy:
         // Market opens at 4:00 PM PKT (16:00) the day BEFORE the draw or same day if draw > 16:00.
@@ -190,12 +203,13 @@ function isGameOpen(drawTime: string) {
 const findAccountById = (id: string, table: string) => {
     if (!id) return null;
     try {
-        const stmt = db.prepare('SELECT * FROM ' + table + ' WHERE LOWER(id) = LOWER(?)');
+        const _db = getDb();
+        const stmt = _db.prepare('SELECT * FROM ' + table + ' WHERE LOWER(id) = LOWER(?)');
         const account = stmt.get(id);
         if (!account) return null;
         
         if (table !== 'games') {
-            account.ledger = db.prepare('SELECT * FROM ledgers WHERE LOWER(accountId) = LOWER(?) ORDER BY timestamp DESC LIMIT 50').all(id).reverse();
+            account.ledger = _db.prepare('SELECT * FROM ledgers WHERE LOWER(accountId) = LOWER(?) ORDER BY timestamp DESC LIMIT 50').all(id).reverse();
         } else {
             account.isMarketOpen = isGameOpen(account.drawTime);
         }
@@ -230,10 +244,11 @@ const findAccountForLogin = (loginId: string) => {
         { name: 'admins', role: 'ADMIN' }
     ];
 
+    const _db = getDb();
     for (var i = 0; i < tables.length; i++) {
         var info = tables[i];
         try {
-            const stmt = db.prepare('SELECT * FROM ' + info.name + ' WHERE LOWER(id) = ?');
+            const stmt = _db.prepare('SELECT * FROM ' + info.name + ' WHERE LOWER(id) = ?');
             const account = stmt.get(targetId);
             if (account) return { account: account, role: info.role };
         } catch (e) {
@@ -245,13 +260,14 @@ const findAccountForLogin = (loginId: string) => {
 
 const getAllFromTable = (table: string, withLedger = false) => {
     try {
-        const rows = db.prepare('SELECT * FROM ' + table).all();
+        const _db = getDb();
+        const rows = _db.prepare('SELECT * FROM ' + table).all();
         return rows.map((acc: any) => {
             try {
                 if (table === 'users' || table === 'dealers' || table === 'admins') {
                     acc.commissionRate = Number(acc.commissionRate) || 0;
                     if (withLedger && acc.id) {
-                        acc.ledger = db.prepare('SELECT * FROM ledgers WHERE LOWER(accountId) = LOWER(?) ORDER BY timestamp DESC LIMIT 20').all(acc.id).reverse();
+                        acc.ledger = _db.prepare('SELECT * FROM ledgers WHERE LOWER(accountId) = LOWER(?) ORDER BY timestamp DESC LIMIT 20').all(acc.id).reverse();
                     }
                     if (acc.prizeRates && typeof acc.prizeRates === 'string') acc.prizeRates = JSON.parse(acc.prizeRates);
                     if (acc.betLimits && typeof acc.betLimits === 'string') acc.betLimits = JSON.parse(acc.betLimits);
@@ -488,17 +504,10 @@ async function startServer() {
 
     // --- DATA ROUTES ---
     app.get('/api/games', (req, res) => {
-        console.log(`[API] GET /api/games requested - DB Status: ${!!db}`);
         try {
-            if (!db) {
-                console.warn('[API] DB is null during /api/games request! Re-initializing...');
-                initDatabase();
-            }
             const data = getAllFromTable('games');
-            console.log(`[API] Returning ${data?.length || 0} games`);
             res.json(data || []);
         } catch (e) {
-            console.error('[API] /api/games error:', e);
             res.status(500).json([]);
         }
     });
@@ -974,7 +983,7 @@ async function startServer() {
     } else {
         const distPath = path.join(process.cwd(), 'dist');
         app.use(express.static(distPath));
-        app.get('/:path*', (req, res) => {
+        app.get('*', (req, res) => {
             res.sendFile(path.join(distPath, 'index.html'));
         });
     }
