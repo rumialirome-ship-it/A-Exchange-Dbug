@@ -50,15 +50,10 @@ const GameDisplayCard: React.FC<{ game: Game; onClick: () => void }> = ({ game, 
                             <div className="text-xs uppercase tracking-widest text-slate-400">STATUS</div>
                             <div className="text-2xl font-mono font-bold text-red-400">MARKET CLOSED</div>
                         </>
-                    ) : status === 'OPEN' ? (
+                    ) : (
                         <>
                             <div className="text-xs uppercase tracking-widest text-slate-400">CLOSES IN</div>
                             <div className="text-3xl font-mono font-bold text-cyan-300">{countdownText}</div>
-                        </>
-                    ) : (
-                        <>
-                            <div className="text-xs uppercase tracking-widest text-slate-400">MARKET OPENS</div>
-                            <div className="text-xl font-mono font-bold text-slate-400">{countdownText}</div>
                         </>
                     )}
                 </div>

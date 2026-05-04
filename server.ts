@@ -154,28 +154,33 @@ function initDatabase() {
 function isGameOpen(drawTime: string) {
     try {
         if (!drawTime || typeof drawTime !== 'string') return false;
+        
         const now = new Date();
-        const pktBias = new Date(now.getTime() + (5 * 60 * 60 * 1000));
-        const timeParts = drawTime.split(':');
-        if (timeParts.length !== 2) return false;
+        // PKT is UTC+5. Calculate current time in PKT.
+        const pktTime = new Date(now.getTime() + (5 * 60 * 60 * 1000));
+        const [drawH, drawM] = drawTime.split(':').map(Number);
+        
+        // Logical Draw Date Strategy:
+        // Market opens at 4:00 PM PKT (16:00) the day BEFORE the draw or same day if draw > 16:00.
+        // Simplified: Market is open IF (CurrentTime < DrawTime) AND (CurrentTime >= MostRecent 4PM).
+        
+        const currentDraw = new Date(pktTime);
+        currentDraw.setUTCHours(drawH, drawM, 0, 0);
 
-        const drawH = parseInt(timeParts[0], 10);
-        const drawM = parseInt(timeParts[1], 10);
-        const pktH = pktBias.getUTCHours();
-
-        const currentCycleStart = new Date(pktBias);
-        currentCycleStart.setUTCHours(16, 0, 0, 0);
-        if (pktH < 16) {
-            currentCycleStart.setUTCDate(currentCycleStart.getUTCDate() - 1);
+        const mostRecent4PM = new Date(pktTime);
+        mostRecent4PM.setUTCHours(16, 0, 0, 0);
+        if (pktTime.getUTCHours() < 16) {
+            mostRecent4PM.setUTCDate(mostRecent4PM.getUTCDate() - 1);
         }
 
-        const currentCycleEnd = new Date(currentCycleStart);
-        currentCycleEnd.setUTCHours(drawH, drawM, 0, 0);
-        if (drawH < 16) {
-            currentCycleEnd.setUTCDate(currentCycleEnd.getUTCDate() + 1);
+        // If draw is before 4PM (like 11AM), it belongs to the previous day's 4pm cycle
+        if (drawH < 16 && pktTime.getUTCHours() >= 16) {
+            currentDraw.setUTCDate(currentDraw.getUTCDate() + 1);
+        } else if (drawH >= 16 && pktTime.getUTCHours() < 16) {
+            currentDraw.setUTCDate(currentDraw.getUTCDate() - 1);
         }
 
-        return pktBias >= currentCycleStart && pktBias < currentCycleEnd;
+        return pktTime >= mostRecent4PM && pktTime < currentDraw;
     } catch (e) {
         return false;
     }
