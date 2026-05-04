@@ -194,7 +194,7 @@ You need **both**: Hostinger to provide the server, and the Gemini Key for the A
 
 ### PathError (Missing parameter name)
 This error occurs because you are using **Express 5**. In Express 5, wildcard routes MUST be named.
-- **Fixed syntax:** `app.get('*splat', ...)`
+- **Fixed syntax:** `app.get('(.*)', ...)` (Most compatible with Express 5 / path-to-regexp v8)
 
 **I have applied this fix to `server.ts`.** If you still see the error:
 1. **Pull the latest changes:** `git pull`
