@@ -953,6 +953,11 @@ async function startServer() {
         });
     }
 
+    // Standard 404 Handler (matches anything not handled above)
+    app.use((req, res) => {
+        res.status(404).send("Not Found");
+    });
+
     app.listen(port, '0.0.0.0', () => {
         console.log(`Server running on http://localhost:${port}`);
     });

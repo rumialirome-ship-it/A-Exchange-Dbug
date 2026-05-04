@@ -211,6 +211,15 @@ This error occurs because you are using **Express 5**. In Express 5, wildcard ro
    ```
 4. **Check logs again:** `pm2 logs ababa-exchange`
 
+### 404 Handlers
+I have added a standard 404 handler at the end of `server.ts`:
+```ts
+app.use((req, res) => {
+  res.status(404).send("Not Found");
+});
+```
+This catches any requests (like POST requests to unknown routes) that aren't handled by your API or the SPA fallback.
+
 ### 503 Server Error / AI Disabled
 If you see a `503` error when using AI features (like Lucky Pick), it means the **Gemini API Key** is missing from your environment.
 - Add `GEMINI_API_KEY=your_key_here` to your `.env` file.
