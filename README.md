@@ -69,10 +69,11 @@ Copy and customize these values:
 ```env
 PORT=3000
 NODE_ENV=production
-JWT_SECRET=generate_a_long_random_string_here
+# Generate a secure JWT_SECRET with: openssl rand -base64 32
+JWT_SECRET=your_generated_secret_here
 GEMINI_API_KEY=your_google_ai_studio_api_key
 ```
-*Note: `JWT_SECRET` is used for login security. `GEMINI_API_KEY` is for AI Lucky Pick.*
+*Note: `JWT_SECRET` is required for login security. `GEMINI_API_KEY` is for AI features.*
 
 ### Build the Frontend
 This compiles the React code into optimized assets in the `dist/` folder.
@@ -145,6 +146,13 @@ sudo apt install certbot python3-certbot-nginx -y
 sudo certbot --nginx -d yourdomain.com -d www.yourdomain.com
 ```
 
+### SSL Troubleshooting (Common Errors)
+- **Error 503 / Unauthorized:** 
+    - **Check DNS:** Ensure your Domain "A" record points to your VPS IP. Delete any old **AAAA** records.
+    - **Firewall:** Ensure ports 80 and 443 are open: `sudo ufw allow 'Nginx Full'`.
+- **Certbot Failed to Authenticate:** 
+    - Try the webroot method: `sudo certbot certonly --webroot -w /var/www/html -d yourdomain.com`.
+
 ---
 
 ## 7. Maintenance
@@ -167,3 +175,23 @@ pm2 restart ababa-exchange
 ### Database Persistence
 The data is stored in `database.sqlite` in the root folder. 
 **Important:** Back up this file regularly. If you delete it, all users and bets will be lost.
+
+---
+
+## 8. Frequently Asked Questions
+
+### Why is there no separate "Backend" folder?
+This is a **Unified Application**. The backend (Express) and frontend (React) live in the same project. 
+- `server.ts` is your entire backend.
+- `src/` contains your frontend code.
+- `npm run build` compiles the frontend into the `dist/` folder, which the backend then serves.
+
+### Can I replace the Gemini API Key with Hostinger?
+No. These are two different services:
+- **Google Gemini API Key**: This is for the "AI Lucky Pick" feature (the AI brain). You get this from [Google AI Studio](https://aistudio.google.com/).
+- **Hostinger**: This is your VPS provider (the hosting server). 
+You need **both**: Hostinger to provide the server, and the Gemini Key for the AI functionality.
+
+### How do I fix the "PathError" (Missing parameter name)?
+If you see this error in your logs, update your `server.ts` to use `app.get('*all', ...)` for the catch-all route instead of `*`. I have already applied this fix to the project.
+
