@@ -1,0 +1,54 @@
+{
+  "admin": {
+    "id": "Guru",
+    "name": "Guru",
+    "password": "Pak@4646",
+    "wallet": 450001000000,
+    "prizeRates": { "oneDigitOpen": 90, "oneDigitClose": 90, "twoDigit": 900 },
+    "avatarUrl": "https://i.pravatar.cc/150?u=Guru",
+    "ledger": [{ "id": "l1-admin", "timestamp": "2024-01-01T12:00:00.000Z", "description": "System Funds Total Update", "debit": 0, "credit": 450001000000, "balance": 450001000000 }]
+  },
+  "dealers": [
+    {
+      "id": "dealer01",
+      "name": "ABD-001",
+      "password": "Pak@123",
+      "area": "KHI",
+      "contact": "03323022123",
+      "wallet": 50000,
+      "commissionRate": 10,
+      "isRestricted": false,
+      "prizeRates": { "oneDigitOpen": 80, "oneDigitClose": 80, "twoDigit": 800 },
+      "ledger": [{ "id": "l1", "timestamp": "2024-01-01T12:00:00.000Z", "description": "Initial Balance", "debit": 0, "credit": 50000, "balance": 50000 }],
+      "avatarUrl": "https://i.pravatar.cc/150?u=dealer01"
+    }
+  ],
+  "users": [
+    {
+      "id": "user01",
+      "name": "ADU-001",
+      "password": "Pak@123",
+      "dealerId": "dealer01",
+      "area": "KHI",
+      "contact": "03323022123",
+      "wallet": 2000,
+      "commissionRate": 5,
+      "isRestricted": false,
+      "prizeRates": { "oneDigitOpen": 70, "oneDigitClose": 70, "twoDigit": 700 },
+      "ledger": [{ "id": "l1", "timestamp": "2024-01-01T12:00:00.000Z", "description": "Initial Balance", "debit": 0, "credit": 2000, "balance": 2000 }],
+      "avatarUrl": "https://i.pravatar.cc/150?u=user01"
+    }
+  ],
+  "games": [
+    { "id": "g1", "name": "Ali Baba", "drawTime": "18:15" },
+    { "id": "g2", "name": "GSM", "drawTime": "18:45" },
+    { "id": "g3", "name": "OYO TV", "drawTime": "20:15" },
+    { "id": "g4", "name": "LS1", "drawTime": "20:45" },
+    { "id": "g5", "name": "OLA TV", "drawTime": "21:15" },
+    { "id": "g6", "name": "AK", "drawTime": "21:55" },
+    { "id": "g7", "name": "LS2", "drawTime": "23:45" },
+    { "id": "g8", "name": "AKC", "drawTime": "00:55" },
+    { "id": "g9", "name": "LS3", "drawTime": "02:10" }
+  ],
+  "bets": []
+}

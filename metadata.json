@@ -1,0 +1,6 @@
+{
+  "name": "A-Baba Exchange = dbug",
+  "description": "A digital lottery platform where Admins manage Dealers, Dealers manage Users, and Users play various daily games using a wallet system. Features hierarchical prize and commission structures, real-time game tracking, and comprehensive ledgers for transparency.",
+  "requestFramePermissions": [],
+  "majorCapabilities": []
+}
