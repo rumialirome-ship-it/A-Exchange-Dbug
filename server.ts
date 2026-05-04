@@ -435,6 +435,10 @@ async function startServer() {
     app.use(express.json());
 
     // --- AUTH ROUTES ---
+    app.get('/api/health', (req, res) => {
+        res.json({ status: 'ok', time: new Date().toISOString(), db: !!db });
+    });
+
     app.post('/api/auth/login', (req, res) => {
         try {
             if (!req.body || !req.body.loginId) return res.status(400).json({ message: 'Input required.' });
@@ -478,8 +482,15 @@ async function startServer() {
 
     // --- DATA ROUTES ---
     app.get('/api/games', (req, res) => {
-        const data = getAllFromTable('games');
-        res.json(data || []);
+        console.log(`[API] GET /api/games requested`);
+        try {
+            const data = getAllFromTable('games');
+            console.log(`[API] Returning ${data?.length || 0} games`);
+            res.json(data || []);
+        } catch (e) {
+            console.error('[API] /api/games error:', e);
+            res.status(500).json([]);
+        }
     });
 
     app.get('/api/user/data', authMiddleware, (req: any, res) => {
@@ -953,7 +964,7 @@ async function startServer() {
     } else {
         const distPath = path.join(process.cwd(), 'dist');
         app.use(express.static(distPath));
-        app.get('*all', (req, res) => {
+        app.get('*path', (req, res) => {
             res.sendFile(path.join(distPath, 'index.html'));
         });
     }

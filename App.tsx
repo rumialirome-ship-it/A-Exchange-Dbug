@@ -74,9 +74,20 @@ const AppContent: React.FC = () => {
 
     const fetchPublicData = useCallback(async () => {
         try {
+            console.log("Fetching games...");
             const gamesResponse = await fetch('/api/games');
-            if (gamesResponse.ok) setGames(await gamesResponse.json());
-        } catch (e) {}
+            console.log("Games response status:", gamesResponse.status);
+            if (gamesResponse.ok) {
+                const data = await gamesResponse.json();
+                console.log("Games data received:", data.length, "items");
+                setGames(data);
+            } else {
+                const text = await gamesResponse.text();
+                console.error("Failed to fetch games. Status:", gamesResponse.status, "Body:", text.slice(0, 100));
+            }
+        } catch (e) {
+            console.error("Games fetch exception:", e);
+        }
     }, []);
 
     const fetchPrivateData = useCallback(async () => {
@@ -282,5 +293,5 @@ const AppContent: React.FC = () => {
     );
 };
 
-function App() { return (<div className="App bg-transparent text-slate-200 h-full"><AuthProvider><AppContent /></AuthProvider></div>); }
+function App() { return (<div className="App bg-transparent text-slate-200 h-full"><AppContent /></div>); }
 export default App;
