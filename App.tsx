@@ -78,8 +78,8 @@ const AppContent: React.FC = () => {
         const timeoutId = setTimeout(() => controller.abort(), 5000);
         try {
             setGameFetchError(null);
-            console.log(`[DEBUG] Requesting: /api/games?t=${Date.now()}`);
-            const gamesResponse = await fetch(`/api/games?t=${Date.now()}`, { signal: controller.signal });
+            console.log(`[DEBUG] Requesting: /api/get_games?t=${Date.now()}`);
+            const gamesResponse = await fetch(`/api/get_games?t=${Date.now()}`, { signal: controller.signal });
             clearTimeout(timeoutId);
             console.log(`[DEBUG] Status: ${gamesResponse.status} ${gamesResponse.statusText}`);
             if (gamesResponse.ok) {

@@ -24,8 +24,9 @@ const JSON_DB_PATH = path.join(__dirname, 'backend', 'db.json');
 let db: any;
 
 function initDatabase() {
+    console.log(`[DEBUG] initDatabase starting. DB_PATH: ${DB_PATH}`);
     if (!fs.existsSync(DB_PATH)) {
-        console.log(`--- Initializing Database at ${DB_PATH} ---`);
+        console.log(`--- Initializing NEW Database at ${DB_PATH} ---`);
         db = new Database(DB_PATH);
         
         // Use the contents of setup-database.js to create schema
@@ -121,30 +122,41 @@ function initDatabase() {
             db.transaction(() => {
                 // Admin
                 const admin = jsonData.admin;
-                insertAdmin.run(admin.id, admin.name, admin.password, admin.wallet, JSON.stringify(admin.prizeRates), admin.avatarUrl);
-                admin.ledger.forEach((l: any) => insertLedger.run(uuidv4(), admin.id, 'ADMIN', new Date(l.timestamp).toISOString(), l.description, l.debit, l.credit, l.balance));
+                if (admin) {
+                  insertAdmin.run(admin.id, admin.name, admin.password, admin.wallet, JSON.stringify(admin.prizeRates), admin.avatarUrl);
+                  if (admin.ledger) admin.ledger.forEach((l: any) => insertLedger.run(uuidv4(), admin.id, 'ADMIN', new Date(l.timestamp).toISOString(), l.description, l.debit, l.credit, l.balance));
+                }
                 
                 // Dealers
-                jsonData.dealers.forEach((dealer: any) => {
+                if (jsonData.dealers) jsonData.dealers.forEach((dealer: any) => {
                     insertDealer.run(dealer.id, dealer.name, dealer.password, dealer.area, dealer.contact, dealer.wallet, dealer.commissionRate, dealer.isRestricted ? 1 : 0, JSON.stringify(dealer.prizeRates), dealer.avatarUrl);
-                    dealer.ledger.forEach((l: any) => insertLedger.run(uuidv4(), dealer.id, 'DEALER', new Date(l.timestamp).toISOString(), l.description, l.debit, l.credit, l.balance));
+                    if (dealer.ledger) dealer.ledger.forEach((l: any) => insertLedger.run(uuidv4(), dealer.id, 'DEALER', new Date(l.timestamp).toISOString(), l.description, l.debit, l.credit, l.balance));
                 });
 
                 // Users
-                jsonData.users.forEach((user: any) => {
+                if (jsonData.users) jsonData.users.forEach((user: any) => {
                     insertUser.run(user.id, user.name, user.password, user.dealerId, user.area, user.contact, user.wallet, user.commissionRate, user.isRestricted ? 1 : 0, JSON.stringify(user.prizeRates), user.betLimits ? JSON.stringify(user.betLimits) : null, user.avatarUrl);
-                    user.ledger.forEach((l: any) => insertLedger.run(uuidv4(), user.id, 'USER', new Date(l.timestamp).toISOString(), l.description, l.debit, l.credit, l.balance));
+                    if (user.ledger) user.ledger.forEach((l: any) => insertLedger.run(uuidv4(), user.id, 'USER', new Date(l.timestamp).toISOString(), l.description, l.debit, l.credit, l.balance));
                 });
 
                 // Games
-                jsonData.games.forEach((game: any) => {
+                if (jsonData.games) jsonData.games.forEach((game: any) => {
                     insertGame.run(game.id, game.name, game.drawTime, game.winningNumber || null, game.payoutsApproved ? 1 : 0);
                 });
             })();
+            console.log(`[DEBUG] Seeding complete. Games: ${jsonData.games?.length || 0}`);
+        } else {
+            console.log(`[DEBUG] JSON_DB_PATH NOT FOUND: ${JSON_DB_PATH}`);
         }
     } else {
         db = new Database(DB_PATH);
-        console.log('--- Database Opened [Path: ' + DB_PATH + '] ---');
+        console.log(`--- Database Opened at ${DB_PATH} ---`);
+        try {
+            const countRes = db.prepare('SELECT count(*) as count FROM games').get();
+            console.log(`[DEBUG] Games count in existing DB: ${countRes.count}`);
+        } catch (e: any) {
+            console.error(`[DEBUG] Failed to check games count: ${e.message}`);
+        }
     }
     db.pragma('journal_mode = WAL');
     db.pragma('foreign_keys = ON');
@@ -502,14 +514,34 @@ async function startServer() {
         }
     });
 
+    // --- DEBUG ROUTE ---
+    app.get('/api/debug', (req, res) => {
+        try {
+            const games = db.prepare('SELECT count(*) as count FROM games').get();
+            res.json({
+                status: 'ok',
+                processCwd: process.cwd(),
+                dirname: __dirname,
+                dbPath: DB_PATH,
+                dbExists: fs.existsSync(DB_PATH),
+                gamesCount: games.count,
+                env: process.env.NODE_ENV
+            });
+        } catch (e: any) {
+            res.status(500).json({ error: e.message });
+        }
+    });
+
     // --- DATA ROUTES ---
-    app.get('/api/games', (req, res) => {
+    app.get('/api/get_games', (req, res) => {
         try {
             const data = getAllFromTable('games');
-            console.log(`[API] GET /api/games - Returned ${data?.length || 0} games`);
+            const logMsg = `[${new Date().toISOString()}] GET /api/get_games - Returned ${data?.length || 0} games\n`;
+            fs.appendFileSync('api_logs.txt', logMsg);
             res.json(data || []);
         } catch (e: any) {
-            console.error('[API] GET /api/games error:', e.message);
+            const logMsg = `[${new Date().toISOString()}] GET /api/get_games ERROR: ${e.message}\n`;
+            fs.appendFileSync('api_logs.txt', logMsg);
             res.status(500).json([]);
         }
     });
