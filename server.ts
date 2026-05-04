@@ -446,7 +446,7 @@ async function startServer() {
     scheduleNextGameReset();
     
     const app = express();
-    const port = process.env.PORT || 3000;
+    const port = 3000;
 
     app.use((req, res, next) => {
         console.log(`[SERVER] ${req.method} ${req.url}`);
@@ -983,7 +983,7 @@ async function startServer() {
     } else {
         const distPath = path.join(process.cwd(), 'dist');
         app.use(express.static(distPath));
-        app.get('*', (req, res) => {
+        app.get('*all', (req, res) => {
             res.sendFile(path.join(distPath, 'index.html'));
         });
     }
@@ -998,4 +998,8 @@ async function startServer() {
     });
 }
 
-startServer();
+startServer().catch(err => {
+    console.error('--- [SERVER FATAL ERROR] ---');
+    console.error(err);
+    process.exit(1);
+});
