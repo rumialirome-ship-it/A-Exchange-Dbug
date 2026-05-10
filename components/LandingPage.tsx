@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Game } from '../types';
 import { useCountdown } from '../hooks/useCountdown';
 import { Icons, GAME_LOGOS } from '../constants';
