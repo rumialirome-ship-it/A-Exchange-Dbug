@@ -1040,7 +1040,7 @@ async function startServer() {
         app.use(express.static(distPath));
         
         // Final catch-all for SPA in Express 5
-        app.get('*all', (req, res) => {
+        app.get('(.*)', (req, res) => {
             const indexPath = path.join(distPath, 'index.html');
             if (fs.existsSync(indexPath)) {
                 res.sendFile(indexPath);
