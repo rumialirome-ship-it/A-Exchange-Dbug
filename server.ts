@@ -481,6 +481,15 @@ async function startServer() {
     app.use(cors());
     app.use(express.json());
 
+    // --- FAVICON FIX ---
+    app.get('/favicon.ico', (req, res) => {
+        const faviconPath = path.join(process.cwd(), 'public', 'favicon.ico');
+        if (fs.existsSync(faviconPath)) {
+            return res.sendFile(faviconPath);
+        }
+        res.status(204).end();
+    });
+
     // --- AUTH ROUTES ---
     app.get('/api/health', (req, res) => {
         res.json({ status: 'ok', time: new Date().toISOString(), db: !!db });
