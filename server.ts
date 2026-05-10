@@ -1029,8 +1029,8 @@ async function startServer() {
     } else {
         const distPath = path.join(process.cwd(), 'dist');
         app.use(express.static(distPath));
-        // Use the recommended wildcard syntax for SPA fallback for Express 5
-        app.get('*all', (req, res) => {
+        // Use the correct modern syntax for SPA fallback
+        app.get('/:path(*)', (req, res) => {
             res.sendFile(path.join(distPath, 'index.html'));
         });
     }

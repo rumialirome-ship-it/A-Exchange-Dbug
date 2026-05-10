@@ -84,6 +84,7 @@ const AppContent: React.FC = () => {
     const [users, setUsers] = useState<User[]>([]);
     const [dealers, setDealers] = useState<Dealer[]>([]);
     const [games, setGames] = useState<Game[]>([]);
+    const [isGamesLoading, setIsGamesLoading] = useState(true);
     const [gameFetchError, setGameFetchError] = useState<string | null>(null);
     const [bets, setBets] = useState<Bet[]>([]);
     const [hasInitialFetched, setHasInitialFetched] = useState(false);
@@ -105,6 +106,8 @@ const AppContent: React.FC = () => {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 5000);
         try {
+            // Only show loader on very first fetch
+            if (games.length === 0) setIsGamesLoading(true);
             setGameFetchError(null);
             console.log(`[DEBUG] Requesting: /api/get_games?t=${Date.now()}`);
             const gamesResponse = await fetch(`/api/get_games?t=${Date.now()}`, { signal: controller.signal });
@@ -114,14 +117,17 @@ const AppContent: React.FC = () => {
                 const data = await gamesResponse.json();
                 console.log(`[DEBUG] SUCCESS: Received ${data.length} games. First game name: ${data[0]?.name}`);
                 setGames(data);
+                setIsGamesLoading(false);
             } else {
                 const text = await gamesResponse.text();
                 const err = `Failed to fetch games. Status: ${gamesResponse.status}`;
                 console.error(`[DEBUG] ERROR: ${err}. Body preview: ${text.slice(0, 200)}`);
                 setGameFetchError(err);
+                setIsGamesLoading(false);
             }
         } catch (e: any) {
             clearTimeout(timeoutId);
+            setIsGamesLoading(false);
             if (e.name === 'AbortError') {
                 console.error("[DEBUG] Games fetch timed out");
                 setGameFetchError("Fetch timed out (5s)");
@@ -240,7 +246,7 @@ const AppContent: React.FC = () => {
     return (
         <div className="min-h-screen flex flex-col">
             {!role || !account ? (
-                <LandingPage games={games} error={gameFetchError} />
+                <LandingPage games={games} error={gameFetchError} isLoading={isGamesLoading} />
             ) : (
                 <>
                     <Header />

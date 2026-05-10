@@ -309,7 +309,7 @@ const AdminResetInfoModal: React.FC<{ isOpen: boolean; onClose: () => void; }> =
 };
 
 
-const LandingPage: React.FC<{ games: Game[]; error?: string | null }> = ({ games, error }) => {
+const LandingPage: React.FC<{ games: Game[]; error?: string | null; isLoading?: boolean }> = ({ games, error, isLoading }) => {
     const [isAdminModalOpen, setIsAdminModalOpen] = useState(false);
     const [isResetModalOpen, setIsResetModalOpen] = useState(false);
     const [isAdminResetModalOpen, setIsAdminResetModalOpen] = useState(false);
@@ -366,7 +366,7 @@ const LandingPage: React.FC<{ games: Game[]; error?: string | null }> = ({ games
                         </div>
                     )}
 
-                    {games.length === 0 && !error ? (
+                    {isLoading ? (
                         <div className="flex flex-col items-center justify-center p-12 bg-slate-800/30 rounded-2xl border border-slate-700/50">
                             <div className="w-12 h-12 border-4 border-cyan-500/20 border-t-cyan-500 rounded-full animate-spin mb-4"></div>
                             <p className="text-cyan-400 font-bold tracking-widest uppercase animate-pulse mb-2">Synchronizing Market Data...</p>
