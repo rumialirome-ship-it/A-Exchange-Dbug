@@ -1038,9 +1038,15 @@ async function startServer() {
     } else {
         const distPath = path.join(process.cwd(), 'dist');
         app.use(express.static(distPath));
-        // Use the suggested syntax for SPA fallback
+        
+        // Final fallback for SPA (recommended for Express 5)
         app.get('/*', (req, res) => {
-            res.sendFile(path.join(distPath, 'index.html'));
+            const indexPath = path.join(distPath, 'index.html');
+            if (fs.existsSync(indexPath)) {
+                res.sendFile(indexPath);
+            } else {
+                res.status(404).send('Frontend build not found. Please run npm run build.');
+            }
         });
     }
 
