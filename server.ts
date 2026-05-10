@@ -1029,21 +1029,39 @@ async function startServer() {
     } else {
         const distPath = path.join(process.cwd(), 'dist');
         app.use(express.static(distPath));
-        // Use the recommended wildcard syntax for SPA fallback
-        app.get('/:path(*)', (req, res) => {
+        // Use the recommended wildcard syntax for SPA fallback for Express 5
+        app.get('*all', (req, res) => {
             res.sendFile(path.join(distPath, 'index.html'));
         });
     }
 
-    // Standard 404 Handler (matches anything not handled above)
+    // Standard 404 Handler
     app.use((req, res) => {
         res.status(404).send("Not Found");
     });
 
-    app.listen(port, '0.0.0.0', () => {
-        console.log(`Server running on http://localhost:${port}`);
-    });
+    try {
+        const server = app.listen(port, '0.0.0.0', () => {
+            console.log(`[SERVER] Success! Running on http://localhost:${port}`);
+        });
+
+        server.on('error', (err: any) => {
+            console.error('[SERVER] HTTP Server Error:', err);
+        });
+    } catch (e: any) {
+        console.error('[SERVER] Critical failure in app.listen:', e.message);
+    }
 }
+
+process.on('uncaughtException', (err) => {
+    console.error('--- [UNCAUGHT EXCEPTION] ---');
+    console.error(err);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+    console.error('--- [UNHANDLED REJECTION] ---');
+    console.error(reason);
+});
 
 startServer().catch(err => {
     console.error('--- [SERVER FATAL ERROR] ---');
