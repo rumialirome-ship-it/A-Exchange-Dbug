@@ -1,5 +1,5 @@
 
-import React, { createContext, useState, useContext, useEffect, useCallback } from 'react';
+import React, { createContext, useState, useContext, useCallback } from 'react';
 import { Role, User, Dealer, Admin } from '../types';
 
 interface AuthContextType {
@@ -53,7 +53,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return response;
     }, [token, logout]);
     
-    useEffect(() => {
+    React.useEffect(() => {
         let poll: ReturnType<typeof setInterval>;
         const verify = async () => {
             if (!token) { setLoading(false); return; }

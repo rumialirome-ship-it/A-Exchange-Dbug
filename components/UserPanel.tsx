@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { User, Game, SubGameType, LedgerEntry, Bet, PrizeRates, BetLimits } from '../types';
 import { Icons } from '../constants';
 import { useCountdown } from '../hooks/useCountdown';
@@ -7,7 +7,7 @@ import { useAuth } from '../hooks/useAuth';
 const getTodayDateString = () => new Date().toISOString().split('T')[0];
 
 const Toast: React.FC<{ message: string; type: 'success' | 'error'; onClose: () => void }> = ({ message, type, onClose }) => {
-    useEffect(() => {
+    React.useEffect(() => {
         const timer = setTimeout(onClose, 4000);
         return () => clearTimeout(timer);
     }, [onClose]);
@@ -488,7 +488,7 @@ const BettingModal: React.FC<BettingModalProps> = ({ game, games, user, onClose,
         return allSubGameTypes;
     }, [game]);
 
-    useEffect(() => {
+    React.useEffect(() => {
         setManualNumbersInput('');
         setManualAmountInput('');
         setBulkInput('');
@@ -519,7 +519,7 @@ const BettingModal: React.FC<BettingModalProps> = ({ game, games, user, onClose,
         setManualNumbersInput(formattedValue);
     };
     
-    useEffect(() => { 
+    React.useEffect(() => { 
         if (availableSubGameTabs.length > 0 && !availableSubGameTabs.includes(subGameType)) {
             setSubGameType(availableSubGameTabs[0]); 
         }

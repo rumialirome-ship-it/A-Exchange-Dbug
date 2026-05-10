@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import { Role, User, Dealer, Admin, Game, Bet, LedgerEntry, SubGameType, PrizeRates } from './types';
 import { Icons, GAME_LOGOS } from './constants';
 import LandingPage from './components/LandingPage';
@@ -11,7 +11,7 @@ import { AuthProvider, useAuth } from './hooks/useAuth';
 const PKTClock: React.FC = () => {
     const [time, setTime] = useState<string>('');
     
-    useEffect(() => {
+    React.useEffect(() => {
         const update = () => {
             const now = new Date();
             const pkt = new Date(now.getTime() + (5 * 60 * 60 * 1000));
@@ -156,7 +156,7 @@ const AppContent: React.FC = () => {
         }
     }, [role, fetchWithAuth, setAccount]);
 
-    useEffect(() => {
+    React.useEffect(() => {
         if (!loading && verifyData) {
             const parsed = parseAllDates(verifyData);
             if (parsed.users) setUsers(parsed.users);
@@ -166,7 +166,7 @@ const AppContent: React.FC = () => {
         }
     }, [loading, verifyData]);
 
-    useEffect(() => {
+    React.useEffect(() => {
         const checkHealth = async () => {
             try {
                 const res = await fetch('/api/health');
@@ -179,13 +179,13 @@ const AppContent: React.FC = () => {
         checkHealth();
     }, []);
 
-    useEffect(() => {
+    React.useEffect(() => {
         fetchPublicData();
         const interval = setInterval(fetchPublicData, 10000);
         return () => clearInterval(interval);
     }, [fetchPublicData]);
 
-    useEffect(() => {
+    React.useEffect(() => {
         if (role) {
             if (!hasInitialFetched) fetchPrivateData();
             const interval = setInterval(fetchPrivateData, 8000);
@@ -196,7 +196,7 @@ const AppContent: React.FC = () => {
         }
     }, [role, fetchPrivateData]);
 
-    useEffect(() => {
+    React.useEffect(() => {
         if (games.length > 0 && lastGamesRef.current.length > 0) {
             games.forEach(newGame => {
                 const oldGame = lastGamesRef.current.find(g => g.id === newGame.id);

@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 
 export const useCountdown = (drawTime: string) => {
     const [display, setDisplay] = useState<{status: 'LOADING' | 'SOON' | 'OPEN' | 'CLOSED', text: string}>({ status: 'LOADING', text: '...' });
@@ -35,7 +35,7 @@ export const useCountdown = (drawTime: string) => {
         };
     }, [drawTime]);
 
-    useEffect(() => {
+    React.useEffect(() => {
         const formatTime12h = (hours24: number, minutes: number) => {
             const ampm = hours24 >= 12 ? 'PM' : 'AM';
             const h = hours24 % 12 || 12;

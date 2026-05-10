@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 
 interface ResultRevealOverlayProps {
   gameName: string;
@@ -63,7 +63,7 @@ const ResultRevealOverlay: React.FC<ResultRevealOverlayProps> = ({ gameName, win
 
   const TOTAL_ROLL_TIME = 7000; // 7 seconds for good tension without boredom
 
-  useEffect(() => {
+  React.useEffect(() => {
     let interval: ReturnType<typeof setInterval>;
     let phraseInterval: ReturnType<typeof setInterval>;
     let progressInterval: ReturnType<typeof setInterval>;

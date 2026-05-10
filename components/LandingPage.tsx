@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Game } from '../types';
 import { useCountdown } from '../hooks/useCountdown';
 import { Icons, GAME_LOGOS } from '../constants';
@@ -315,7 +315,7 @@ const LandingPage: React.FC<{ games: Game[]; error?: string | null; isLoading?: 
     const [isAdminResetModalOpen, setIsAdminResetModalOpen] = useState(false);
     const [pktTime, setPktTime] = useState<string>('');
 
-    useEffect(() => {
+    React.useEffect(() => {
         const update = () => {
             const now = new Date();
             const pkt = new Date(now.getTime() + (5 * 60 * 60 * 1000));

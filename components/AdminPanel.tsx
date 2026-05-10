@@ -1,5 +1,5 @@
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Dealer, User, Game, PrizeRates, LedgerEntry, Bet, NumberLimit, SubGameType, Admin } from '../types';
 import { Icons } from '../constants';
 import { useAuth } from '../hooks/useAuth';
@@ -678,7 +678,7 @@ const NumberLimitsView: React.FC = () => {
         }
     };
 
-    useEffect(() => {
+    React.useEffect(() => {
         fetchLimits();
     }, []);
     
@@ -1056,7 +1056,7 @@ const NumberSummaryView: React.FC<{
         }
     };
     
-    useEffect(() => {
+    React.useEffect(() => {
         let intervalId: ReturnType<typeof setInterval>;
         fetchSummary();
         intervalId = setInterval(fetchSummary, 5000);
@@ -1237,7 +1237,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ admin, dealers, onSaveDealer, o
     return null;
   }, [viewingLedgerId, viewingLedgerType, admin, dealers, users]);
 
-  useEffect(() => {
+  React.useEffect(() => {
     const fetchLedger = async () => {
         if (!viewingLedgerId || !viewingLedgerType) return;
         setIsLedgerLoading(true);
@@ -1266,7 +1266,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ admin, dealers, onSaveDealer, o
     }
   }, [viewingLedgerId, viewingLedgerType, fetchWithAuth]);
 
-  useEffect(() => {
+  React.useEffect(() => {
     const fetchSummary = async () => {
       try {
         const response = await fetchWithAuth('/api/admin/summary');

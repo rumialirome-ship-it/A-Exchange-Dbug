@@ -1,5 +1,5 @@
 
-import React, { useState, useMemo, useEffect, useRef } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import { Dealer, User, PrizeRates, LedgerEntry, BetLimits, Bet, Game, SubGameType } from '../types';
 import { Icons } from '../constants';
 import { useCountdown } from '../hooks/useCountdown';
@@ -23,7 +23,7 @@ const Modal: React.FC<{ isOpen: boolean; onClose: () => void; title: string; chi
 };
 
 const Toast: React.FC<{ message: string; type: 'success' | 'error'; onClose: () => void }> = ({ message, type, onClose }) => {
-    useEffect(() => {
+    React.useEffect(() => {
         const timer = setTimeout(onClose, 4000);
         return () => clearTimeout(timer);
     }, [onClose]);
@@ -307,7 +307,7 @@ const MoreOptionsDropdown: React.FC<{
     const [isOpen, setIsOpen] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
 
-    useEffect(() => {
+    React.useEffect(() => {
         const clickOut = (e: MouseEvent) => { if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) setIsOpen(false); };
         document.addEventListener('mousedown', clickOut);
         return () => document.removeEventListener('mousedown', clickOut);
