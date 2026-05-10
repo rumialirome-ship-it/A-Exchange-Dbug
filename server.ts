@@ -178,35 +178,48 @@ function isGameOpen(drawTime: string) {
         if (!drawTime || typeof drawTime !== 'string' || !drawTime.includes(':')) return false;
         
         const now = new Date();
-        // PKT is UTC+5. Calculate current time in PKT.
-        const pktTime = new Date(now.getTime() + (5 * 60 * 60 * 1000));
-        const parts = drawTime.split(':');
-        const drawH = parseInt(parts[0], 10);
-        const drawM = parseInt(parts[1], 10);
+        const pktOffset = 5 * 60 * 60 * 1000;
+        const pktTime = new Date(now.getTime() + pktOffset);
         
+        const [drawH, drawM] = drawTime.split(':').map(Number);
         if (isNaN(drawH) || isNaN(drawM)) return false;
         
-        // Logical Draw Date Strategy:
-        // Market opens at 4:00 PM PKT (16:00) the day BEFORE the draw or same day if draw > 16:00.
-        // Simplified: Market is open IF (CurrentTime < DrawTime) AND (CurrentTime >= MostRecent 4PM).
+        const currentPktH = pktTime.getUTCHours();
         
-        const currentDraw = new Date(pktTime);
-        currentDraw.setUTCHours(drawH, drawM, 0, 0);
+        // Find the target draw date
+        let drawDate = new Date(pktTime);
+        drawDate.setUTCHours(drawH, drawM, 0, 0);
 
-        const mostRecent4PM = new Date(pktTime);
-        mostRecent4PM.setUTCHours(16, 0, 0, 0);
-        if (pktTime.getUTCHours() < 16) {
-            mostRecent4PM.setUTCDate(mostRecent4PM.getUTCDate() - 1);
+        // Find the most recent 4PM (start of a cycle)
+        let cycleStart = new Date(pktTime);
+        cycleStart.setUTCHours(16, 0, 0, 0);
+        if (currentPktH < 16) {
+            cycleStart.setUTCDate(cycleStart.getUTCDate() - 1);
         }
 
-        // If draw is before 4PM (like 11AM), it belongs to the previous day's 4pm cycle
-        if (drawH < 16 && pktTime.getUTCHours() >= 16) {
-            currentDraw.setUTCDate(currentDraw.getUTCDate() + 1);
-        } else if (drawH >= 16 && pktTime.getUTCHours() < 16) {
-            currentDraw.setUTCDate(currentDraw.getUTCDate() - 1);
+        // Logic:
+        // If drawH >= 16 (e.g. 18:15), the draw is on the same cycle as the 4PM start
+        // If drawH < 16 (e.g. 11:00), the draw is on the morning following the 4PM start
+        
+        if (drawH < 16) {
+            // If we are currently in a cycle that started at 4PM yesterday, 
+            // and the draw is 11AM today, the currentPktH would be < 11.
+            // If we are currently in a cycle that started at 4PM today, 
+            // the draw is 11AM tomorrow.
+            if (currentPktH >= 16) {
+                drawDate.setUTCDate(drawDate.getUTCDate() + 1);
+            }
+        } else {
+            // If draw is 18:00 and we are 10:00 (cycle started yesterday at 16:00), 
+            // drawDate (defaulted to today 18:00) is correct.
+            // If draw is 18:00 and we are 17:00 (cycle started today at 16:00),
+            // drawDate (defaulted to today 18:00) is correct.
+            // If draw is 18:00 and we are 19:00 (cycle started today at 16:00),
+            // drawDate should have been... wait, the market closed at 18:00.
+            // So drawDate is correctly today 18:00.
         }
 
-        return pktTime >= mostRecent4PM && pktTime < currentDraw;
+        return pktTime >= cycleStart && pktTime < drawDate;
     } catch (e) {
         return false;
     }
@@ -535,13 +548,12 @@ async function startServer() {
     // --- DATA ROUTES ---
     app.get('/api/get_games', (req, res) => {
         try {
+            console.log(`[SERVER] Handling /api/get_games. Query: ${JSON.stringify(req.query)}`);
             const data = getAllFromTable('games');
-            const logMsg = `[${new Date().toISOString()}] GET /api/get_games - Returned ${data?.length || 0} games\n`;
-            fs.appendFileSync('api_logs.txt', logMsg);
+            console.log(`[SERVER] Found ${data?.length || 0} games in DB.`);
             res.json(data || []);
         } catch (e: any) {
-            const logMsg = `[${new Date().toISOString()}] GET /api/get_games ERROR: ${e.message}\n`;
-            fs.appendFileSync('api_logs.txt', logMsg);
+            console.error(`[SERVER] ERROR in /api/get_games: ${e.message}`);
             res.status(500).json([]);
         }
     });
@@ -1017,7 +1029,8 @@ async function startServer() {
     } else {
         const distPath = path.join(process.cwd(), 'dist');
         app.use(express.static(distPath));
-        app.get('*all', (req, res) => {
+        // Use the recommended wildcard syntax for SPA fallback
+        app.get('/:path(*)', (req, res) => {
             res.sendFile(path.join(distPath, 'index.html'));
         });
     }

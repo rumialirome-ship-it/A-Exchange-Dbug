@@ -313,6 +313,23 @@ const LandingPage: React.FC<{ games: Game[]; error?: string | null }> = ({ games
     const [isAdminModalOpen, setIsAdminModalOpen] = useState(false);
     const [isResetModalOpen, setIsResetModalOpen] = useState(false);
     const [isAdminResetModalOpen, setIsAdminResetModalOpen] = useState(false);
+    const [pktTime, setPktTime] = useState<string>('');
+
+    useEffect(() => {
+        const update = () => {
+            const now = new Date();
+            const pkt = new Date(now.getTime() + (5 * 60 * 60 * 1000));
+            const hours = pkt.getUTCHours();
+            const minutes = pkt.getUTCMinutes();
+            const seconds = pkt.getUTCSeconds();
+            const ampm = hours >= 12 ? 'PM' : 'AM';
+            const h12 = hours % 12 || 12;
+            setPktTime(`${String(h12).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')} ${ampm}`);
+        };
+        update();
+        const interval = setInterval(update, 1000);
+        return () => clearInterval(interval);
+    }, []);
     
     const handleGameClick = () => {
         document.getElementById('login')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -321,26 +338,40 @@ const LandingPage: React.FC<{ games: Game[]; error?: string | null }> = ({ games
     return (
         <div className="min-h-screen bg-transparent text-slate-200 p-4 sm:p-6 md:p-8">
             <div className="max-w-7xl mx-auto">
-                <header className="text-center my-12 md:my-20">
+                <header className="text-center my-8 md:my-16">
                     <h1 className="text-5xl md:text-7xl font-extrabold mb-3 tracking-wider glitch-text" data-text="A-BABA EXCHANGE">A-BABA EXCHANGE</h1>
-                    <p className="text-lg md:text-xl text-slate-400 max-w-2xl mx-auto font-sans">The Premier Digital Lottery Platform. Play daily games, manage your wallet, and win big.</p>
+                    <div className="flex flex-col items-center gap-2 mb-6">
+                         <div className="px-4 py-1 bg-cyan-500/10 border border-cyan-400/20 rounded-full flex items-center gap-3">
+                            <div className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></div>
+                            <span className="text-sm font-mono text-cyan-400 font-bold tracking-widest">{pktTime} PKT</span>
+                        </div>
+                        <p className="text-lg md:text-xl text-slate-400 max-w-2xl mx-auto font-sans">The Premier Digital Lottery Platform. Play daily games, manage your wallet, and win big.</p>
+                    </div>
                 </header>
 
                 <section id="games" className="mb-20">
-                    <h2 className="text-3xl font-bold text-center mb-10 text-white uppercase tracking-widest">Today's Games</h2>
+                    <div className="flex flex-col sm:flex-row justify-between items-center mb-10 gap-4">
+                        <h2 className="text-3xl font-bold text-white uppercase tracking-widest">Today's Games</h2>
+                        <button onClick={() => window.location.reload()} className="flex items-center gap-2 text-xs text-slate-400 hover:text-cyan-400 transition-colors uppercase tracking-widest">
+                            {React.cloneElement(Icons.refresh, { className: 'w-4 h-4' })}
+                            Refresh Market
+                        </button>
+                    </div>
                     
                     {error && (
                         <div className="bg-red-500/10 border border-red-500/30 p-4 rounded-md text-red-300 text-center mb-8">
                             <p className="font-bold">Error connecting to market server:</p>
                             <p className="text-sm opacity-80">{error}</p>
-                            <button onClick={() => window.location.reload()} className="mt-2 text-xs underline hover:text-white">Retry Connection</button>
+                            <button onClick={() => window.location.reload()} className="mt-2 text-xs underline hover:text-white font-bold">RETRY CONNECTION</button>
                         </div>
                     )}
 
                     {games.length === 0 && !error ? (
                         <div className="flex flex-col items-center justify-center p-12 bg-slate-800/30 rounded-2xl border border-slate-700/50">
                             <div className="w-12 h-12 border-4 border-cyan-500/20 border-t-cyan-500 rounded-full animate-spin mb-4"></div>
-                            <p className="text-cyan-400 font-bold tracking-widest uppercase animate-pulse">Synchronizing Market Data...</p>
+                            <p className="text-cyan-400 font-bold tracking-widest uppercase animate-pulse mb-2">Synchronizing Market Data...</p>
+                            <p className="text-slate-500 text-xs">This ensures you have the latest draw times and results.</p>
+                            <button onClick={() => window.location.reload()} className="mt-6 px-4 py-2 border border-slate-600 rounded hover:bg-slate-700 text-xs text-slate-300 transition-all uppercase tracking-widest">Force Refresh</button>
                         </div>
                     ) : games.length > 0 ? (
                         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-8">
@@ -349,7 +380,10 @@ const LandingPage: React.FC<{ games: Game[]; error?: string | null }> = ({ games
                             ))}
                         </div>
                     ) : !error && (
-                        <p className="text-center text-slate-500 italic">No games currently scheduled.</p>
+                        <div className="text-center p-12 bg-slate-800/30 rounded-2xl border border-slate-700/50">
+                             <p className="text-slate-400 italic mb-4">No games currently scheduled in the marketplace.</p>
+                             <button onClick={() => window.location.reload()} className="text-cyan-400 text-xs font-bold underline uppercase tracking-widest">Check again</button>
+                        </div>
                     )}
                 </section>
 

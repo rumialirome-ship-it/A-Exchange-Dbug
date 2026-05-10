@@ -8,6 +8,28 @@ import UserPanel from './components/UserPanel';
 import ResultRevealOverlay from './components/ResultRevealOverlay';
 import { AuthProvider, useAuth } from './hooks/useAuth';
 
+const PKTClock: React.FC = () => {
+    const [time, setTime] = useState<string>('');
+    
+    useEffect(() => {
+        const update = () => {
+            const now = new Date();
+            const pkt = new Date(now.getTime() + (5 * 60 * 60 * 1000));
+            const hours = pkt.getUTCHours();
+            const minutes = pkt.getUTCMinutes();
+            const seconds = pkt.getUTCSeconds();
+            const ampm = hours >= 12 ? 'PM' : 'AM';
+            const h12 = hours % 12 || 12;
+            setTime(`${String(h12).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')} ${ampm} PKT`);
+        };
+        update();
+        const interval = setInterval(update, 1000);
+        return () => clearInterval(interval);
+    }, []);
+    
+    return <span className="font-mono text-cyan-400 font-bold whitespace-nowrap">{time}</span>;
+}
+
 const Header: React.FC = () => {
     const { role, account, logout } = useAuth();
     if (!role || !account) return null;
@@ -15,7 +37,7 @@ const Header: React.FC = () => {
     const roleColors: { [key in Role]: string } = {
         [Role.Admin]: 'bg-red-500/20 text-red-300 border-red-500/30 shadow-[0_0_10px_rgba(239,68,68,0.5)]',
         [Role.Dealer]: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30 shadow-[0_0_10px_rgba(16,185,129,0.5)]',
-        [Role.User]: 'bg-sky-500/20 text-sky-300 border-sky-500/30 shadow-[0_0_10px_rgba(14,165,233,0.5)]',
+        [Role.User]: 'bg-sky-500/20 text-sky-300 border-sky-500/30 shadow-[0_0_10_rgba(14,165,233,0.5)]',
     };
 
     return (
@@ -29,22 +51,28 @@ const Header: React.FC = () => {
                             <span className="font-bold text-xl text-cyan-300">{account.name ? account.name.charAt(0) : '?'}</span>
                         </div>
                     )}
-                    <div>
-                        <h1 className="text-xl font-bold glitch-text hidden md:block" data-text="A-BABA EXCHANGE">A-BABA EXCHANGE</h1>
+                    <div className="hidden sm:block">
+                        <h1 className="text-xl font-bold glitch-text" data-text="A-BABA EXCHANGE">A-BABA EXCHANGE</h1>
                          <div className="flex items-center text-sm">
-                            <span className={`px-3 py-1 rounded-full text-xs font-semibold mr-2 ${roleColors[role] || 'bg-slate-700'}`}>{role}</span>
-                            <span className="text-slate-300 font-semibold tracking-wider">{account.name || 'Account'}</span>
+                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold mr-2 ${roleColors[role] || 'bg-slate-700'}`}>{role}</span>
+                            <span className="text-slate-300 font-semibold tracking-wider text-xs">{account.name || 'Account'}</span>
                         </div>
                     </div>
                 </div>
-                <div className="flex items-center space-x-4">
-                     { typeof account.wallet === 'number' && (
-                        <div className="hidden md:flex items-center bg-slate-800/50 px-4 py-2 rounded-md border border-slate-700 shadow-inner">
-                            {React.cloneElement(Icons.wallet, { className: "h-6 w-6 mr-3 text-cyan-400" })}
-                            <span className="font-semibold text-white text-lg tracking-wider">PKR {account.wallet.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                
+                <div className="flex items-center gap-4">
+                    <div className="hidden lg:flex flex-col items-end">
+                        <PKTClock />
+                        <span className="text-[9px] text-slate-500 uppercase tracking-widest">Pakistan Time</span>
+                    </div>
+
+                    { typeof account.wallet === 'number' && (
+                        <div className="flex items-center bg-slate-800/50 px-3 py-1.5 rounded-md border border-slate-700 shadow-inner">
+                            {React.cloneElement(Icons.wallet, { className: "h-5 w-5 mr-3 text-cyan-400" })}
+                            <span className="font-semibold text-white text-base tracking-wider whitespace-nowrap">PKR {account.wallet.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                         </div>
                     )}
-                    <button onClick={logout} className="bg-slate-700/50 border border-slate-600 hover:bg-red-500/30 hover:border-red-500/50 text-white font-bold py-2 px-4 rounded-md transition-all duration-300">Logout</button>
+                    <button onClick={logout} className="bg-slate-700/50 border border-slate-600 hover:bg-red-500/30 hover:border-red-500/50 text-white font-bold py-1.5 px-3 rounded text-sm transition-all duration-300">Logout</button>
                 </div>
             </div>
         </header>
