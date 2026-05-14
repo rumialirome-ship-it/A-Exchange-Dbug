@@ -13,12 +13,11 @@ import { GoogleGenAI } from '@google/genai';
 
 dotenv.config();
 
-const __filename = typeof import.meta !== 'undefined' ? fileURLToPath(import.meta.url) : '';
-const __dirname = typeof import.meta !== 'undefined' ? path.dirname(__filename) : process.cwd();
+const __dirname = typeof import.meta !== 'undefined' && import.meta.url ? path.dirname(fileURLToPath(import.meta.url)) : process.cwd();
 
 const JWT_SECRET = process.env.JWT_SECRET || 'dev_secret';
-const DB_PATH = path.resolve(process.cwd(), 'database.sqlite');
-const JSON_DB_PATH = path.resolve(process.cwd(), 'backend', 'db.json');
+const DB_PATH = path.resolve(__dirname, 'database.sqlite');
+const JSON_DB_PATH = path.resolve(__dirname, 'backend', 'db.json');
 
 // --- DATABASE SETUP ---
 let db: any;
@@ -1052,13 +1051,14 @@ async function startServer() {
         const distPath = path.join(process.cwd(), 'dist');
         app.use(express.static(distPath));
         
-        // Final catch-all for SPA in Express 5
-        app.get('*all', (req, res) => {
-            const indexPath = path.join(distPath, 'index.html');
+        // Final catch-all for SPA
+        app.get('*', (req, res, next) => {
+            if (req.url.startsWith('/api')) return next();
+            const indexPath = path.resolve(distPath, 'index.html');
             if (fs.existsSync(indexPath)) {
                 res.sendFile(indexPath);
             } else {
-                res.status(404).send('Frontend build not found. Please run: npm run build');
+                next();
             }
         });
     }
