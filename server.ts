@@ -17,107 +17,114 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const JWT_SECRET = process.env.JWT_SECRET || 'dev_secret';
-const DB_PATH = path.join(__dirname, 'database.sqlite');
-const JSON_DB_PATH = path.join(__dirname, 'backend', 'db.json');
+const DB_PATH = process.env.NODE_ENV === 'production' 
+    ? path.join(process.cwd(), 'database.sqlite')
+    : path.join(__dirname, 'database.sqlite');
+const JSON_DB_PATH = process.env.NODE_ENV === 'production'
+    ? path.join(process.cwd(), 'backend', 'db.json')
+    : path.join(__dirname, 'backend', 'db.json');
 
 // --- DATABASE SETUP ---
 let db: any;
 
 function initDatabase() {
     console.log(`[DEBUG] initDatabase starting. DB_PATH: ${DB_PATH}`);
-    if (!fs.existsSync(DB_PATH)) {
-        console.log(`--- Initializing NEW Database at ${DB_PATH} ---`);
-        db = new Database(DB_PATH);
-        
-        // Use the contents of setup-database.js to create schema
-        db.exec(`
-            CREATE TABLE admins (
-                id TEXT PRIMARY KEY,
-                name TEXT NOT NULL,
-                password TEXT NOT NULL,
-                wallet REAL NOT NULL,
-                prizeRates TEXT NOT NULL,
-                avatarUrl TEXT
-            );
-            CREATE TABLE dealers (
-                id TEXT PRIMARY KEY,
-                name TEXT NOT NULL,
-                password TEXT NOT NULL,
-                area TEXT,
-                contact TEXT,
-                wallet REAL NOT NULL,
-                commissionRate REAL NOT NULL,
-                isRestricted INTEGER NOT NULL DEFAULT 0,
-                prizeRates TEXT NOT NULL,
-                avatarUrl TEXT
-            );
-            CREATE TABLE users (
-                id TEXT PRIMARY KEY,
-                name TEXT NOT NULL,
-                password TEXT NOT NULL,
-                dealerId TEXT NOT NULL,
-                area TEXT,
-                contact TEXT,
-                wallet REAL NOT NULL,
-                commissionRate REAL NOT NULL,
-                isRestricted INTEGER NOT NULL DEFAULT 0,
-                prizeRates TEXT NOT NULL,
-                betLimits TEXT,
-                avatarUrl TEXT,
-                FOREIGN KEY (dealerId) REFERENCES dealers(id)
-            );
-            CREATE TABLE games (
-                id TEXT PRIMARY KEY,
-                name TEXT NOT NULL,
-                drawTime TEXT NOT NULL,
-                winningNumber TEXT,
-                payoutsApproved INTEGER DEFAULT 0
-            );
-            CREATE TABLE bets (
-                id TEXT PRIMARY KEY,
-                userId TEXT NOT NULL,
-                dealerId TEXT NOT NULL,
-                gameId TEXT NOT NULL,
-                subGameType TEXT NOT NULL,
-                numbers TEXT NOT NULL,
-                amountPerNumber REAL NOT NULL,
-                totalAmount REAL NOT NULL,
-                timestamp TEXT NOT NULL,
-                FOREIGN KEY (userId) REFERENCES users(id),
-                FOREIGN KEY (dealerId) REFERENCES dealers(id),
-                FOREIGN KEY (gameId) REFERENCES games(id)
-            );
-            CREATE TABLE ledgers (
-                id TEXT PRIMARY KEY,
-                accountId TEXT NOT NULL,
-                accountType TEXT NOT NULL,
-                timestamp TEXT NOT NULL,
-                description TEXT NOT NULL,
-                debit REAL NOT NULL,
-                credit REAL NOT NULL,
-                balance REAL NOT NULL
-            );
-            CREATE TABLE number_limits (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                gameType TEXT NOT NULL,
-                numberValue TEXT NOT NULL,
-                limitAmount REAL NOT NULL,
-                UNIQUE(gameType, numberValue)
-            );
-            CREATE INDEX idx_ledgers_accountId ON ledgers(accountId);
-            CREATE INDEX idx_bets_userId ON bets(userId);
-            CREATE INDEX idx_users_dealerId ON users(dealerId);
-        `);
+    const dbExists = fs.existsSync(DB_PATH);
+    db = new Database(DB_PATH);
+    
+    // Always ensure schema exists
+    db.exec(`
+        CREATE TABLE IF NOT EXISTS admins (
+            id TEXT PRIMARY KEY,
+            name TEXT NOT NULL,
+            password TEXT NOT NULL,
+            wallet REAL NOT NULL,
+            prizeRates TEXT NOT NULL,
+            avatarUrl TEXT
+        );
+        CREATE TABLE IF NOT EXISTS dealers (
+            id TEXT PRIMARY KEY,
+            name TEXT NOT NULL,
+            password TEXT NOT NULL,
+            area TEXT,
+            contact TEXT,
+            wallet REAL NOT NULL,
+            commissionRate REAL NOT NULL,
+            isRestricted INTEGER NOT NULL DEFAULT 0,
+            prizeRates TEXT NOT NULL,
+            avatarUrl TEXT
+        );
+        CREATE TABLE IF NOT EXISTS users (
+            id TEXT PRIMARY KEY,
+            name TEXT NOT NULL,
+            password TEXT NOT NULL,
+            dealerId TEXT NOT NULL,
+            area TEXT,
+            contact TEXT,
+            wallet REAL NOT NULL,
+            commissionRate REAL NOT NULL,
+            isRestricted INTEGER NOT NULL DEFAULT 0,
+            prizeRates TEXT NOT NULL,
+            betLimits TEXT,
+            avatarUrl TEXT,
+            FOREIGN KEY (dealerId) REFERENCES dealers(id)
+        );
+        CREATE TABLE IF NOT EXISTS games (
+            id TEXT PRIMARY KEY,
+            name TEXT NOT NULL,
+            drawTime TEXT NOT NULL,
+            winningNumber TEXT,
+            payoutsApproved INTEGER DEFAULT 0
+        );
+        CREATE TABLE IF NOT EXISTS bets (
+            id TEXT PRIMARY KEY,
+            userId TEXT NOT NULL,
+            dealerId TEXT NOT NULL,
+            gameId TEXT NOT NULL,
+            subGameType TEXT NOT NULL,
+            numbers TEXT NOT NULL,
+            amountPerNumber REAL NOT NULL,
+            totalAmount REAL NOT NULL,
+            timestamp TEXT NOT NULL,
+            FOREIGN KEY (userId) REFERENCES users(id),
+            FOREIGN KEY (dealerId) REFERENCES dealers(id),
+            FOREIGN KEY (gameId) REFERENCES games(id)
+        );
+        CREATE TABLE IF NOT EXISTS ledgers (
+            id TEXT PRIMARY KEY,
+            accountId TEXT NOT NULL,
+            accountType TEXT NOT NULL,
+            timestamp TEXT NOT NULL,
+            description TEXT NOT NULL,
+            debit REAL NOT NULL,
+            credit REAL NOT NULL,
+            balance REAL NOT NULL
+        );
+        CREATE TABLE IF NOT EXISTS number_limits (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            gameType TEXT NOT NULL,
+            numberValue TEXT NOT NULL,
+            limitAmount REAL NOT NULL,
+            UNIQUE(gameType, numberValue)
+        );
+        CREATE INDEX IF NOT EXISTS idx_ledgers_accountId ON ledgers(accountId);
+        CREATE INDEX IF NOT EXISTS idx_bets_userId ON bets(userId);
+        CREATE INDEX IF NOT EXISTS idx_users_dealerId ON users(dealerId);
+    `);
 
+    // Check if seeding is needed (no games in DB)
+    const gamesCountRes = db.prepare('SELECT count(*) as count FROM games').get();
+    if (gamesCountRes.count === 0) {
+        console.log('--- Games table is empty. Attempting to seed from db.json ---');
         if (fs.existsSync(JSON_DB_PATH)) {
-            console.log('--- Migrating initial data from db.json ---');
+            console.log(`--- Seeding from ${JSON_DB_PATH} ---`);
             const jsonData = JSON.parse(fs.readFileSync(JSON_DB_PATH, 'utf-8'));
             
-            const insertAdmin = db.prepare('INSERT INTO admins (id, name, password, wallet, prizeRates, avatarUrl) VALUES (?, ?, ?, ?, ?, ?)');
-            const insertDealer = db.prepare('INSERT INTO dealers (id, name, password, area, contact, wallet, commissionRate, isRestricted, prizeRates, avatarUrl) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
-            const insertUser = db.prepare('INSERT INTO users (id, name, password, dealerId, area, contact, wallet, commissionRate, isRestricted, prizeRates, betLimits, avatarUrl) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
-            const insertGame = db.prepare('INSERT INTO games (id, name, drawTime, winningNumber, payoutsApproved) VALUES (?, ?, ?, ?, ?)');
-            const insertLedger = db.prepare('INSERT INTO ledgers (id, accountId, accountType, timestamp, description, debit, credit, balance) VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
+            const insertAdmin = db.prepare('INSERT OR IGNORE INTO admins (id, name, password, wallet, prizeRates, avatarUrl) VALUES (?, ?, ?, ?, ?, ?)');
+            const insertDealer = db.prepare('INSERT OR IGNORE INTO dealers (id, name, password, area, contact, wallet, commissionRate, isRestricted, prizeRates, avatarUrl) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
+            const insertUser = db.prepare('INSERT OR IGNORE INTO users (id, name, password, dealerId, area, contact, wallet, commissionRate, isRestricted, prizeRates, betLimits, avatarUrl) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
+            const insertGame = db.prepare('INSERT OR IGNORE INTO games (id, name, drawTime, winningNumber, payoutsApproved) VALUES (?, ?, ?, ?, ?)');
+            const insertLedger = db.prepare('INSERT OR IGNORE INTO ledgers (id, accountId, accountType, timestamp, description, debit, credit, balance) VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
 
             db.transaction(() => {
                 // Admin
@@ -146,17 +153,27 @@ function initDatabase() {
             })();
             console.log(`[DEBUG] Seeding complete. Games: ${jsonData.games?.length || 0}`);
         } else {
-            console.log(`[DEBUG] JSON_DB_PATH NOT FOUND: ${JSON_DB_PATH}`);
+            console.warn(`[DEBUG] SEED FAIL: JSON_DB_PATH NOT FOUND at ${JSON_DB_PATH}`);
+            // Fallback: If no db.json, still insert some default games so the app isn't empty
+            console.log('--- Inserting fallback default games ---');
+            const defaultGames = [
+                { id: "g1", name: "Ali Baba", drawTime: "18:15" },
+                { id: "g2", name: "GSM", drawTime: "18:45" },
+                { id: "g3", name: "OYO TV", drawTime: "20:15" },
+                { id: "g4", name: "LS1", drawTime: "20:45" },
+                { id: "g5", name: "OLA TV", drawTime: "21:15" },
+                { id: "g6", name: "AK", drawTime: "21:55" },
+                { id: "g7", name: "LS2", drawTime: "23:45" },
+                { id: "g8", name: "AKC", drawTime: "00:55" },
+                { id: "g9", name: "LS3", drawTime: "02:10" }
+            ];
+            const insertGame = db.prepare('INSERT OR IGNORE INTO games (id, name, drawTime, winningNumber, payoutsApproved) VALUES (?, ?, ?, ?, ?)');
+            db.transaction(() => {
+                defaultGames.forEach(g => insertGame.run(g.id, g.name, g.drawTime, null, 0));
+            })();
         }
     } else {
-        db = new Database(DB_PATH);
-        console.log(`--- Database Opened at ${DB_PATH} ---`);
-        try {
-            const countRes = db.prepare('SELECT count(*) as count FROM games').get();
-            console.log(`[DEBUG] Games count in existing DB: ${countRes.count}`);
-        } catch (e: any) {
-            console.error(`[DEBUG] Failed to check games count: ${e.message}`);
-        }
+        console.log(`[DEBUG] Games count in existing DB: ${gamesCountRes.count}`);
     }
     db.pragma('journal_mode = WAL');
     db.pragma('foreign_keys = ON');
