@@ -1052,7 +1052,7 @@ async function startServer() {
         app.use(express.static(distPath));
         
         // Final catch-all for SPA
-        app.get('*', (req, res, next) => {
+        app.get('*all', (req, res, next) => {
             if (req.url.startsWith('/api')) return next();
             const indexPath = path.resolve(distPath, 'index.html');
             if (fs.existsSync(indexPath)) {
