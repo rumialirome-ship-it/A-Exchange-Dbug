@@ -13,16 +13,12 @@ import { GoogleGenAI } from '@google/genai';
 
 dotenv.config();
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const __filename = typeof import.meta !== 'undefined' ? fileURLToPath(import.meta.url) : '';
+const __dirname = typeof import.meta !== 'undefined' ? path.dirname(__filename) : process.cwd();
 
 const JWT_SECRET = process.env.JWT_SECRET || 'dev_secret';
-const DB_PATH = process.env.NODE_ENV === 'production' 
-    ? path.join(process.cwd(), 'database.sqlite')
-    : path.join(__dirname, 'database.sqlite');
-const JSON_DB_PATH = process.env.NODE_ENV === 'production'
-    ? path.join(process.cwd(), 'backend', 'db.json')
-    : path.join(__dirname, 'backend', 'db.json');
+const DB_PATH = path.resolve(process.cwd(), 'database.sqlite');
+const JSON_DB_PATH = path.resolve(process.cwd(), 'backend', 'db.json');
 
 // --- DATABASE SETUP ---
 let db: any;
